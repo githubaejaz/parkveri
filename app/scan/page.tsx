@@ -18,7 +18,13 @@ export default function ScanPage() {
 
   const [vehicle, setVehicle] = useState(null);
   const [payment, setPayment] = useState(null);
-  const [status, setStatus] = useState<any>(null);
+  const [status, setStatus] = useState<null | {
+    type: string | null;
+    paymentActive: boolean | null;
+    vehicleActive: boolean | null;
+    daysRemaining: number | null;
+    confidence: number | null;
+  }>(null);
 
 const { user, role, loading } = useAuth();
 const router = useRouter();
@@ -55,7 +61,7 @@ useEffect(() => {
   // -----------------------------
   // OCR CLEANING (IMPORTANT)
   // -----------------------------
-  function normalizePlate(text: string) {
+  function normalizePlate(text: string) 0{
     const cleaned = text
       .toUpperCase()
       .replace(/[^A-Z0-9]/g, "")
@@ -323,12 +329,12 @@ useEffect(() => {
 
             <p>
               <b>Vehicle Active:</b>{" "}
-              {status.vehicleActive ? "Yes" : "No"}
+              {status?.vehicleActive ? "Yes" : "No"}
             </p>
 
             <p>
               <b>Payment Active:</b>{" "}
-              {status.paymentActive ? "Yes" : "No"}
+              {status?.paymentActive ? "Yes" : "No"}
             </p>
 
             <p>
@@ -338,7 +344,7 @@ useEffect(() => {
 
             <p>
               <b>Days Left:</b>{" "}
-              {status.daysRemaining}
+              {status?.daysRemaining}
             </p>
 
           </div>
