@@ -18,13 +18,7 @@ export default function ScanPage() {
 
   const [vehicle, setVehicle] = useState(null);
   const [payment, setPayment] = useState(null);
-  const [status, setStatus] = useState({
-    type: null,
-    paymentActive: null,
-    vehicleActive: null,
-    daysRemaining: null,
-    confidence: null,
-  });
+  const [status, setStatus] = useState<any>(null);
 
 const { user, role, loading } = useAuth();
 const router = useRouter();
@@ -288,7 +282,7 @@ useEffect(() => {
       {vehicle && status?.type !== "low_confidence" && (
         <div
           className={`border p-5 rounded mt-4 ${
-            status.type === "allowed"
+            status?.type === "allowed"
               ? "bg-green-50"
               : "bg-red-50"
           }`}
@@ -296,12 +290,12 @@ useEffect(() => {
 
           <h2
             className={`text-2xl font-bold mb-4 ${
-              status.type === "allowed"
+              status?.type === "allowed"
                 ? "text-green-700"
                 : "text-red-700"
             }`}
           >
-            {status.type === "allowed"
+            {status?.type === "allowed"
               ? "🟢 ENTRY ALLOWED"
               : "🔴 ENTRY DENIED"}
           </h2>
