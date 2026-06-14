@@ -157,7 +157,7 @@ export default function UsersPage() {
       <div className="space-y-3">
 
         {users.map((u) => (
-          <div key={u.id} className="border p-3 rounded">
+          <div key={u.id} className="border p-3 rounded text-black bg-white">
 
             <p><b>Name:</b> {u.full_name}</p>
             <p><b>Email:</b> {u.email}</p>

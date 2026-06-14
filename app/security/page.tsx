@@ -85,7 +85,7 @@ export default function SecurityPage() {
   return (
     <main className="max-w-4xl mx-auto p-6">
 
-      <h1 className="text-4xl font-bold mb-6">
+      <h1 className="text-4xl font-bold text-black mb-6">
         Security Verification
       </h1>
 

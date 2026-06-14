@@ -27,6 +27,7 @@ export default function ScanPage() {
   const [vehicle, setVehicle] = useState<any | null>(null);
   const [payment, setPayment] = useState<any | null>(null);
   const [status, setStatus] = useState<StatusType | null>(null);
+  const [facingMode, setFacingMode] = useState("environment");
 
 const { user, role, loading } = useAuth();
 const router = useRouter();
@@ -50,6 +51,8 @@ const router = useRouter();
       setImage(img);
     }
   }
+
+  
 
   // -----------------------------
   // OCR CLEANING (IMPORTANT)
@@ -199,7 +202,7 @@ const router = useRouter();
   return (
     <main className="max-w-5xl mx-auto p-6">
 
-      <h1 className="text-4xl font-bold mb-6">
+      <h1 className="text-4xl font-bold text-black mb-6">
         🚗 Smart Scanner PRO
       </h1>
 
@@ -208,13 +211,28 @@ const router = useRouter();
 
         {!image ? (
           <Webcam
-            ref={webcamRef}
-            screenshotFormat="image/jpeg"
-            className="w-full rounded"
-          />
+          ref={webcamRef}
+          screenshotFormat="image/jpeg"
+          videoConstraints={{
+            facingMode,
+          }}
+        />
         ) : (
           <img src={image} className="w-full rounded" />
         )}
+
+<button
+  onClick={() =>
+    setFacingMode(
+      facingMode === "environment"
+        ? "user"
+        : "environment"
+    )
+  }
+  className="bg-blue-500 text-white px-4 py-2 rounded"
+>
+  Switch Camera
+</button>
 
         <div className="flex gap-2 mt-3">
 
@@ -244,7 +262,7 @@ const router = useRouter();
 
       {/* OCR TEXT */}
       {ocrText && (
-        <div className="border p-3 rounded mt-3 text-sm">
+        <div className="border p-3 rounded text-black bg-white mt-3 text-sm">
           <b>OCR Raw Output:</b>
           <pre>{ocrText}</pre>
         </div>

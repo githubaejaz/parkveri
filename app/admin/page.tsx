@@ -109,7 +109,7 @@ const router = useRouter();
   return (
     <main className="p-8">
 
-      <h1 className="text-4xl font-bold mb-8">
+      <h1 className="text-4xl font-bold text-black mb-8">
         Admin Dashboard
       </h1>
 
