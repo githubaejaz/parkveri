@@ -18,7 +18,7 @@ export default function AdminDashboard() {
   const { user, role, loading } = useAuth();
 const router = useRouter();
 
-useEffect(() => {
+/*useEffect(() => {
   if (!loading) {
     if (!user) {
       router.push("/login");
@@ -26,7 +26,7 @@ useEffect(() => {
       router.push("/");
     }
   }
-}, [user, role, loading]);
+}, [user, role, loading]);*/
 
   useEffect(() => {
     loadDashboard();
