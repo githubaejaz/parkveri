@@ -61,7 +61,7 @@ useEffect(() => {
   // -----------------------------
   // OCR CLEANING (IMPORTANT)
   // -----------------------------
-  function normalizePlate(text: string) 0{
+  function normalizePlate(text: string) {
     const cleaned = text
       .toUpperCase()
       .replace(/[^A-Z0-9]/g, "")
