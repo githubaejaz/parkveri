@@ -119,7 +119,7 @@ useEffect(() => {
     }
 
     setCleanPlate(plate);
-    await searchVehicle(plate);
+    await searchVehicle(plate, confidence);
 
     setPageLoading(false);
   }
@@ -127,7 +127,7 @@ useEffect(() => {
   // -----------------------------
   // SEARCH VEHICLE + PAYMENT
   // -----------------------------
-  async function searchVehicle(plate: string) {
+  async function searchVehicle(plate: string, confidence: number = 100) {
     const { data: v } = await supabase
       .from("vehicles")
       .select(`
@@ -184,7 +184,7 @@ useEffect(() => {
       paymentActive,
       vehicleActive: v.is_active,
       daysRemaining,
-      confidence,
+      confidence, // ✅ now defined
     });
   }
 
