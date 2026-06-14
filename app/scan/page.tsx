@@ -18,13 +18,15 @@ export default function ScanPage() {
 
   const [vehicle, setVehicle] = useState(null);
   const [payment, setPayment] = useState(null);
-  const [status, setStatus] = useState<null | {
-    type: string | null;
-    paymentActive: boolean | null;
-    vehicleActive: boolean | null;
-    daysRemaining: number | null;
-    confidence: number | null;
-  }>(null);
+  type StatusType = {
+    type: "low_confidence" | "not_found" | "allowed" | "denied";
+    paymentActive: boolean;
+    vehicleActive: boolean;
+    daysRemaining: number;
+    confidence: number;
+  };
+  
+  const [status, setStatus] = useState<StatusType | null>(null);
 
 const { user, role, loading } = useAuth();
 const router = useRouter();
@@ -117,6 +119,9 @@ useEffect(() => {
       setStatus({
         type: "low_confidence",
         confidence,
+        paymentActive: false,
+        vehicleActive: false,
+        daysRemaining: 0,
       });
       setPageLoading(false);
       return;
@@ -147,12 +152,12 @@ useEffect(() => {
 
     if (!v) {
       setStatus({
-  type: "not_found",
-  paymentActive: false,
-  vehicleActive: false,
-  daysRemaining: 0,
-  confidence: 0,
-});
+        type: "not_found",
+        paymentActive: false,
+        vehicleActive: false,
+        daysRemaining: 0,
+        confidence: 0,
+      });
       return;
     }
 
@@ -188,7 +193,7 @@ useEffect(() => {
       paymentActive,
       vehicleActive: v.is_active,
       daysRemaining,
-      confidence: status?.confidence || 100,
+      confidence,
     });
   }
 
