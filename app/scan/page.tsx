@@ -48,17 +48,17 @@ useEffect(() => {
     const img = webcamRef.current?.getScreenshot();
     if (img) {
       setImage(img);
-      reset();
+      //reset();
     }
   }
 
-  function reset() {
+  /*function reset() {
     setOcrText("");
     setCleanPlate("");
     setVehicle(null);
     setPayment(null);
     setStatus(null);
-  }
+  }*/
 
   // -----------------------------
   // OCR CLEANING (IMPORTANT)
