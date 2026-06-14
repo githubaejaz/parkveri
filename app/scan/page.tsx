@@ -24,9 +24,8 @@ export default function ScanPage() {
   const [cleanPlate, setCleanPlate] = useState("");
   const [pageloading, setPageLoading] = useState(false);
 
-  const [vehicle, setVehicle] = useState(null);
-  const [payment, setPayment] = useState(null);
-  
+  const [vehicle, setVehicle] = useState<any | null>(null);
+  const [payment, setPayment] = useState<any | null>(null);
   const [status, setStatus] = useState<StatusType | null>(null);
 
 const { user, role, loading } = useAuth();
