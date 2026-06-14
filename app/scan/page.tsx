@@ -8,6 +8,14 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 
+type StatusType = {
+  type: "low_confidence" | "not_found" | "allowed" | "denied";
+  paymentActive: boolean;
+  vehicleActive: boolean;
+  daysRemaining: number;
+  confidence: number;
+};
+
 export default function ScanPage() {
   const webcamRef = useRef<Webcam>(null);
 
@@ -18,13 +26,6 @@ export default function ScanPage() {
 
   const [vehicle, setVehicle] = useState(null);
   const [payment, setPayment] = useState(null);
-  type StatusType = {
-    type: "low_confidence" | "not_found" | "allowed" | "denied";
-    paymentActive: boolean;
-    vehicleActive: boolean;
-    daysRemaining: number;
-    confidence: number;
-  };
   
   const [status, setStatus] = useState<StatusType | null>(null);
 
