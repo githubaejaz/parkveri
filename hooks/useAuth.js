@@ -25,6 +25,8 @@ export function useAuth() {
     setLoading(true);
 
     const { data } = await supabase.auth.getUser();
+    console.log("data check");
+    console.log(data);
     const authUser = data?.user;
 
     setUser(authUser);
@@ -36,13 +38,19 @@ export function useAuth() {
     }
 
     // GET ROLE FROM USERS TABLE
-    const { data: profile } = await supabase
-      .from("users")
-      .select("role")
-      .eq("id", authUser.id)
-      .single();
+    const { data: profile, error } = await supabase
+  .from("users")
+  .select("role")
+  .eq("id", authUser.id)
+  .maybeSingle();
 
-    setRole(profile?.role || "resident");
+if (error) {
+  console.error(error);
+}
+
+setRole(profile?.role || "resident");
+    console.log(profile);
+    console.log(profile?.role);
     setLoading(false);
   }
 
