@@ -1,4 +1,4 @@
-import levenshtein from "fast-levenshtein";
+import { levenshtein } from "@/lib/levenshtein";
 
 export function findBestPlateMatch(
   detectedPlate: string,
