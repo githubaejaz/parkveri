@@ -58,29 +58,45 @@ const router = useRouter();
   // OCR CLEANING (IMPORTANT)
   // -----------------------------
   function normalizePlate(text: string) {
-    const cleaned = text
+    let cleaned = text
       .toUpperCase()
-      .replace(/[^A-Z0-9]/g, "")
+      .replace(/[^A-Z0-9]/g, "");
+  
+    const match = cleaned.match(
+      /([A-Z0-9]{2})([A-Z0-9]{2})([A-Z0-9]{1,3})([A-Z0-9]{4})/
+    );
+  
+    if (!match) return "";
+  
+    let state = match[1];
+    let district = match[2];
+    let series = match[3];
+    let number = match[4];
+  
+    state = state
+      .replace(/0/g, "O")
+      .replace(/1/g, "I")
+      .replace(/5/g, "S")
+      .replace(/8/g, "B");
+  
+    series = series
+      .replace(/0/g, "O")
+      .replace(/1/g, "I")
+      .replace(/5/g, "S")
+      .replace(/8/g, "B");
+  
+    district = district
       .replace(/O/g, "0")
       .replace(/I/g, "1")
-      .replace(/Z/g, "2")
       .replace(/S/g, "5");
   
-    const patterns = [
-      /[A-Z]{2}[0-9]{2}[A-Z]{1,3}[0-9]{4}/,
-      /[A-Z]{2}[0-9]{1}[A-Z]{1,3}[0-9]{4}/,
-      /[A-Z]{2}[0-9]{2}[A-Z]{2}[0-9]{4}/,
-    ];
+    number = number
+      .replace(/O/g, "0")
+      .replace(/I/g, "1")
+      .replace(/S/g, "5")
+      .replace(/B/g, "8");
   
-    for (const p of patterns) {
-      const match = cleaned.match(p);
-  
-      if (match) {
-        return match[0];
-      }
-    }
-  
-    return "";
+    return `${state}${district}${series}${number}`;
   }
 
   // -----------------------------
@@ -294,7 +310,7 @@ const router = useRouter();
           wing
         )
       `)
-      .eq("vehicle_number", plate)
+      .ilike("vehicle_number", `%${plate}%`)
       .single();
 
     if (!v) {
