@@ -137,41 +137,37 @@ const router = useRouter();
       // OCR PASS 1
       // -----------------------------
       const originalResult =
-        await Tesseract.recognize(
-          croppedImage,
-  "eng",
-  {
-    tessedit_pageseg_mode: 7,
-    tessedit_char_whitelist:
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
-  } as any
-        );
+      await Tesseract.recognize(
+        croppedImage,
+        "eng",
+        {
+          logger: (m) => console.log(m),
+        }
+      );
   
       // -----------------------------
       // OCR PASS 2
       // -----------------------------
       const grayResult =
-        await Tesseract.recognize(
-          grayImage,
-          "eng",
-          {
-            tessedit_char_whitelist:
-              "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
-          } as any
-        );
+      await Tesseract.recognize(
+        croppedImage,
+        "eng",
+        {
+          logger: (m) => console.log(m),
+        }
+      );
   
       // -----------------------------
       // OCR PASS 3
       // -----------------------------
       const contrastResult =
-        await Tesseract.recognize(
-          contrastImage,
-          "eng",
-          {
-            tessedit_char_whitelist:
-              "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
-          } as any
-        );
+      await Tesseract.recognize(
+        croppedImage,
+        "eng",
+        {
+          logger: (m) => console.log(m),
+        }
+      );
   
       // -----------------------------
       // RAW TEXT
@@ -232,9 +228,14 @@ const router = useRouter();
             plateFrequency[a]
         )[0];
   
-      const confidence =
-        getConfidence(
-          rawTexts.join(" "),
+        const bestOCRConfidence = Math.max(
+          originalResult.data.confidence || 0,
+          grayResult.data.confidence || 0,
+          contrastResult.data.confidence || 0
+        );
+        
+        const confidence = getConfidence(
+          bestOCRConfidence,
           bestPlate
         );
   
