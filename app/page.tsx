@@ -102,7 +102,7 @@ export default function HomePage() {
   }
 
   let menus = residentMenus;
-
+  
   if (role === "admin") {
     menus = adminMenus;
   }
@@ -128,7 +128,7 @@ export default function HomePage() {
           <div className="flex justify-between items-center mb-8">
 
             <span className="bg-blue-100 text-blue-800 px-4 py-2 rounded font-semibold">
-              Logged in as: {role?.toUpperCase()}
+            Logged in as: {String(role || "").toUpperCase()}
             </span>
 
             <button
