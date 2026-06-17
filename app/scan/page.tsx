@@ -61,70 +61,222 @@ const router = useRouter();
     const cleaned = text
       .toUpperCase()
       .replace(/[^A-Z0-9]/g, "")
-      // OCR fixes
       .replace(/O/g, "0")
       .replace(/I/g, "1")
-      .replace(/Z/g, "2");
-
+      .replace(/Z/g, "2")
+      .replace(/S/g, "5");
+  
     const patterns = [
-      /[A-Z]{2}[0-9]{2}[A-Z]{1,3}[0-9]{4}/, // MH02AB1234
-      /[A-Z]{2}[0-9]{1,2}[A-Z]{1,3}[0-9]{3,4}/
+      /[A-Z]{2}[0-9]{2}[A-Z]{1,3}[0-9]{4}/,
+      /[A-Z]{2}[0-9]{1}[A-Z]{1,3}[0-9]{4}/,
+      /[A-Z]{2}[0-9]{2}[A-Z]{2}[0-9]{4}/,
     ];
-
+  
     for (const p of patterns) {
       const match = cleaned.match(p);
-      if (match) return match[0];
+  
+      if (match) {
+        return match[0];
+      }
     }
-
+  
     return "";
   }
 
   // -----------------------------
   // CONFIDENCE CHECK (SIMULATED)
   // -----------------------------
-  function getConfidence(text: string, plate: string) {
+  function getConfidence(
+    ocrConfidence: number,
+    plate: string
+  ) {
     if (!plate) return 0;
-
-    if (plate.length >= 10) return 90;
-    if (plate.length >= 8) return 75;
-    if (plate.length >= 6) return 55;
-
-    return 30;
+  
+    let score = Math.round(ocrConfidence);
+  
+    if (plate.length >= 10)
+      score += 10;
+  
+    return Math.min(score, 100);
   }
 
   // -----------------------------
   // OCR RUN
   // -----------------------------
   async function runOCR() {
-    if (!image) return alert("Capture image first");
-
-    setPageLoading(true);
-
-    const result = await Tesseract.recognize(image, "eng");
-    const text = result.data.text;
-
-    setOcrText(text);
-
-    const plate = normalizePlate(text);
-    const confidence = getConfidence(text, plate);
-
-    if (!plate || confidence < 60) {
-      setCleanPlate("");
-      setStatus({
-        type: "low_confidence",
-        confidence,
-        paymentActive: false,
-        vehicleActive: false,
-        daysRemaining: 0,
-      });
-      setPageLoading(false);
+    if (!image) {
+      alert("Capture image first");
       return;
     }
-
-    setCleanPlate(plate);
-    await searchVehicle(plate, confidence);
-
-    setPageLoading(false);
+  
+    setPageLoading(true);
+  
+    try {
+  
+      // Clear old result
+      setVehicle(null);
+      setPayment(null);
+      setStatus(null);
+  
+      // -----------------------------
+      // Crop Plate Area
+      // -----------------------------
+      const croppedImage =
+        await cropPlateArea(image);
+  
+      // -----------------------------
+      // Generate Variants
+      // -----------------------------
+      const grayImage =
+        await makeGrayScale(croppedImage);
+  
+      const contrastImage =
+        await makeHighContrast(croppedImage);
+  
+      // -----------------------------
+      // OCR PASS 1
+      // -----------------------------
+      const originalResult =
+        await Tesseract.recognize(
+          croppedImage,
+  "eng",
+  {
+    tessedit_pageseg_mode: 7,
+    tessedit_char_whitelist:
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
+  } as any
+        );
+  
+      // -----------------------------
+      // OCR PASS 2
+      // -----------------------------
+      const grayResult =
+        await Tesseract.recognize(
+          grayImage,
+          "eng",
+          {
+            tessedit_char_whitelist:
+              "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
+          } as any
+        );
+  
+      // -----------------------------
+      // OCR PASS 3
+      // -----------------------------
+      const contrastResult =
+        await Tesseract.recognize(
+          contrastImage,
+          "eng",
+          {
+            tessedit_char_whitelist:
+              "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
+          } as any
+        );
+  
+      // -----------------------------
+      // RAW TEXT
+      // -----------------------------
+      const rawTexts = [
+        originalResult.data.text,
+        grayResult.data.text,
+        contrastResult.data.text,
+      ];
+  
+      setOcrText(rawTexts.join("\n\n"));
+  
+      // -----------------------------
+      // EXTRACT PLATES
+      // -----------------------------
+      const candidates = rawTexts
+        .map((t) => normalizePlate(t))
+        .filter(Boolean);
+  
+      console.log(
+        "Plate Candidates:",
+        candidates
+      );
+  
+      // -----------------------------
+      // NO PLATE FOUND
+      // -----------------------------
+      if (candidates.length === 0) {
+        setStatus({
+          type: "low_confidence",
+          confidence: 0,
+          paymentActive: false,
+          vehicleActive: false,
+          daysRemaining: 0,
+        });
+  
+        setPageLoading(false);
+        return;
+      }
+  
+      // -----------------------------
+      // FIND BEST CANDIDATE
+      // -----------------------------
+      const plateFrequency: Record<
+        string,
+        number
+      > = {};
+  
+      candidates.forEach((plate) => {
+        plateFrequency[plate] =
+          (plateFrequency[plate] || 0) + 1;
+      });
+  
+      const bestPlate =
+        Object.keys(plateFrequency).sort(
+          (a, b) =>
+            plateFrequency[b] -
+            plateFrequency[a]
+        )[0];
+  
+      const confidence =
+        getConfidence(
+          rawTexts.join(" "),
+          bestPlate
+        );
+  
+      setCleanPlate(bestPlate);
+  
+      // -----------------------------
+      // LOW CONFIDENCE
+      // -----------------------------
+      if (confidence < 60) {
+        setStatus({
+          type: "low_confidence",
+          confidence,
+          paymentActive: false,
+          vehicleActive: false,
+          daysRemaining: 0,
+        });
+  
+        setPageLoading(false);
+        return;
+      }
+  
+      // -----------------------------
+      // SEARCH VEHICLE
+      // -----------------------------
+      await searchVehicle(
+        bestPlate,
+        confidence
+      );
+  
+    } catch (err) {
+  
+      console.error(err);
+  
+      alert(
+        "Error while scanning number plate"
+      );
+  
+    } finally {
+  
+      setPageLoading(false);
+  
+    }
   }
 
   // -----------------------------
@@ -199,6 +351,231 @@ const router = useRouter();
     await searchVehicle(cleanPlate);
   }
 
+  async function cropPlateArea(base64Image: string) {
+    return new Promise<string>((resolve) => {
+      const img = new Image();
+  
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+  
+        const cropWidth = img.width * 0.6;
+        const cropHeight = img.height * 0.22;
+  
+        const x = img.width * 0.2;
+        const y = img.height * 0.39;
+  
+        canvas.width = cropWidth;
+        canvas.height = cropHeight;
+  
+        ctx?.drawImage(
+          img,
+          x,
+          y,
+          cropWidth,
+          cropHeight,
+          0,
+          0,
+          cropWidth,
+          cropHeight
+        );
+  
+        resolve(canvas.toDataURL("image/jpeg"));
+      };
+  
+      img.src = base64Image;
+    });
+  }
+
+  async function cropMultipleRegions(
+    base64Image: string
+  ) {
+    return new Promise<string[]>((resolve) => {
+      const img = new Image();
+  
+      img.onload = () => {
+        const regions: string[] = [];
+  
+        const positions = [
+          { x: 0.2, y: 0.20 },
+          { x: 0.2, y: 0.39 },
+          { x: 0.2, y: 0.58 },
+          { x: 0.05, y: 0.39 },
+          { x: 0.35, y: 0.39 },
+        ];
+  
+        positions.forEach((p) => {
+          const canvas =
+            document.createElement("canvas");
+  
+          const cropWidth =
+            img.width * 0.6;
+  
+          const cropHeight =
+            img.height * 0.22;
+  
+          canvas.width = cropWidth;
+          canvas.height = cropHeight;
+  
+          const ctx =
+            canvas.getContext("2d");
+  
+          ctx?.drawImage(
+            img,
+            img.width * p.x,
+            img.height * p.y,
+            cropWidth,
+            cropHeight,
+            0,
+            0,
+            cropWidth,
+            cropHeight
+          );
+  
+          regions.push(
+            canvas.toDataURL("image/jpeg")
+          );
+        });
+  
+        resolve(regions);
+      };
+  
+      img.src = base64Image;
+    });
+  }
+
+  function makeGrayScale(base64: string) {
+    return new Promise<string>((resolve) => {
+      const img = new Image();
+  
+      img.onload = () => {
+        const canvas =
+          document.createElement("canvas");
+  
+        canvas.width = img.width;
+        canvas.height = img.height;
+  
+        const ctx =
+          canvas.getContext("2d");
+  
+        ctx?.drawImage(img, 0, 0);
+  
+        const imageData =
+          ctx?.getImageData(
+            0,
+            0,
+            canvas.width,
+            canvas.height
+          );
+  
+        if (!imageData) return;
+  
+        const data = imageData.data;
+  
+        for (
+          let i = 0;
+          i < data.length;
+          i += 4
+        ) {
+          const avg =
+            (data[i] +
+              data[i + 1] +
+              data[i + 2]) /
+            3;
+  
+          data[i] = avg;
+          data[i + 1] = avg;
+          data[i + 2] = avg;
+        }
+  
+        ctx?.putImageData(
+          imageData,
+          0,
+          0
+        );
+  
+        resolve(
+          canvas.toDataURL("image/jpeg")
+        );
+      };
+  
+      img.src = base64;
+    });
+  }
+
+  function makeHighContrast(
+    base64: string
+  ) {
+    return new Promise<string>((resolve) => {
+      const img = new Image();
+  
+      img.onload = () => {
+        const canvas =
+          document.createElement("canvas");
+  
+        canvas.width = img.width;
+        canvas.height = img.height;
+  
+        const ctx =
+          canvas.getContext("2d");
+  
+        ctx?.drawImage(img, 0, 0);
+  
+        const imageData =
+          ctx?.getImageData(
+            0,
+            0,
+            canvas.width,
+            canvas.height
+          );
+  
+        if (!imageData) return;
+  
+        const data = imageData.data;
+  
+        const contrast = 180;
+  
+        const factor =
+          (259 *
+            (contrast + 255)) /
+          (255 * (259 - contrast));
+  
+        for (
+          let i = 0;
+          i < data.length;
+          i += 4
+        ) {
+          data[i] =
+            factor *
+              (data[i] - 128) +
+            128;
+  
+          data[i + 1] =
+            factor *
+              (data[i + 1] - 128) +
+            128;
+  
+          data[i + 2] =
+            factor *
+              (data[i + 2] - 128) +
+            128;
+        }
+  
+        ctx?.putImageData(
+          imageData,
+          0,
+          0
+        );
+  
+        resolve(
+          canvas.toDataURL("image/jpeg")
+        );
+      };
+  
+      img.src = base64;
+    });
+  }
+
   return (
     <main className="max-w-5xl mx-auto p-6">
 
@@ -210,13 +587,31 @@ const router = useRouter();
       <div className="border p-4 rounded">
 
         {!image ? (
+          <div className="relative">
+
           <Webcam
-          ref={webcamRef}
-          screenshotFormat="image/jpeg"
-          videoConstraints={{
-            facingMode,
-          }}
-        />
+            ref={webcamRef}
+            screenshotFormat="image/jpeg"
+            videoConstraints={{
+              facingMode,
+              width: 1280,
+              height: 720,
+            }}
+            className="w-full rounded"
+          />
+        
+          <div
+            className="absolute border-4 border-green-500 rounded"
+            style={{
+              width: "60%",
+              height: "22%",
+              left: "20%",
+              top: "39%",
+              pointerEvents: "none",
+            }}
+          />
+        
+        </div>
         ) : (
           <img src={image} className="w-full rounded" />
         )}
@@ -256,6 +651,26 @@ const router = useRouter();
           >
             {pageloading ? "Scanning..." : "Scan Plate"}
           </button>
+
+          <input
+  type="file"
+  accept="image/*"
+  capture="environment"
+  className="mt-4"
+  onChange={(e) => {
+    const file = e.target.files?.[0];
+
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      setImage(reader.result as string);
+    };
+
+    reader.readAsDataURL(file);
+  }}
+/>
 
         </div>
       </div>
