@@ -57,6 +57,11 @@ const adminMenus = [
     url: "/smartscanner",
     icon: "📷",
   },
+  {
+    title: "Smart Scanner2",
+    url: "/smartscanner2",
+    icon: "📷",
+  },
 ];
 
 const residentMenus = [
@@ -80,6 +85,11 @@ const residentMenus = [
     url: "/smartscanner",
     icon: "📷",
   },
+  {
+    title: "Smart Scanner2",
+    url: "/smartscanner2",
+    icon: "📷",
+  },
 ];
 
 const securityMenus = [
@@ -96,6 +106,11 @@ const securityMenus = [
   {
     title: "Smart Scanner",
     url: "/smartscanner",
+    icon: "📷",
+  },
+  {
+    title: "Smart Scanner2",
+    url: "/smartscanner2",
     icon: "📷",
   },
 ];
