@@ -165,14 +165,7 @@ const router = useRouter();
           const result =
   await Tesseract.recognize(
     img,
-    "eng",
-    {
-      tessedit_pageseg_mode: "7",
-      tessedit_char_whitelist:
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
-      logger: (m) =>
-        console.log(m),
-    } as any
+    "eng"
   );
   
           const text =
